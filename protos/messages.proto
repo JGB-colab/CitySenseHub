@@ -1,0 +1,71 @@
+// messages.proto
+
+syntax = "proto3";
+
+// Define an enum for device types
+enum DeviceType {
+  UNKNOWN = 0;
+  LIGHT_POST = 1;
+  TRAFFIC_LIGHT = 2;
+  CAMERA = 3;
+  TEMPERATURE_SENSOR = 4;
+  AIR_QUALITY_SENSOR = 5;
+}
+
+// Message for device information (used in discovery)
+message DeviceInfo {
+  string device_id = 1;
+  DeviceType type = 2;
+  string ip_address = 3;
+  int32 port = 4;
+  bool is_actuator = 5;
+  int32 broker_port = 6;
+  string topic = 7;
+}
+
+// Message for commands (e.g., turn on/off)
+message Command {
+  bool state = 1; // true for ON, false for OFF
+}
+
+// Message for sensor data
+message SensorData {
+  string device_id = 1;
+  float value = 2;
+  string unit = 3;
+}
+
+// Message for query responses (e.g., device status)
+message Query {
+  bool status = 1; // true for ON, false for OFF
+}
+
+// --- NOVAS MENSAGENS PARA REQUISIÇÕES GRPC ---
+
+// Mensagem de requisição para mudar o estado do dispositivo
+message ChangeStateRequest {
+  string device_id = 1; // O ID do dispositivo a ser alterado
+  Command command = 2;  // O comando a ser aplicado (ligar/desligar)
+}
+
+// Mensagem de requisição para consultar o estado do dispositivo
+message StateDeviceRequest {
+  string device_id = 1; // O ID do dispositivo a ser consultado
+}
+
+// Mensagem principal para descoberta UDP e dados de sensor (mantém o oneof para esses casos)
+// Esta mensagem NÃO será usada como parâmetro para os RPCs de ChangeState e StateDevice
+message SmartCityMessage {
+  oneof payload {
+    DeviceInfo devices = 1;     // Usado para anúncios de dispositivo (descoberta)
+    SensorData sensor_data = 2; // Usado para transmissão de dados de sensor
+  }
+}
+
+// Definição do Serviço gRPC
+service SmartCity {
+  // RPC para mudar o estado do dispositivo, usando a nova mensagem de requisição
+  rpc ChangeState (ChangeStateRequest) returns (Query);
+  // RPC para consultar o estado do dispositivo, usando a nova mensagem de requisição
+  rpc StateDevice (StateDeviceRequest) returns (Query);
+}

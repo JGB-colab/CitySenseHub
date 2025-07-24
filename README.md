@@ -1,6 +1,6 @@
 # Sistema de Simulação de Cidade Inteligente
 
-Este projeto implementa uma simulação de uma infraestrutura de Cidade Inteligente, demonstrando a comunicação entre dispositivos IoT (sensores e atuadores), um Gateway central e um cliente de controle. A arquitetura utiliza diferentes protocolos de comunicação para tarefas específicas, como RESTful API para interação com o usuário, gRPC para controle de dispositivos e Multicast DNS para descoberta de serviços.
+Este projeto implementa uma simulação de uma infraestrutura de Cidade Inteligente, demonstrando a comunicação entre dispositivos IoT (sensores e atuadores), um Gateway central e um cliente de controle. A arquitetura utiliza diferentes protocolos de comunicação para tarefas específicas, como RESTful API para interação com o usuário, gRPC para controle de dispositivos e Multicast para descoberta de serviços.
 
 ## Diagrama da Arquitetura
 

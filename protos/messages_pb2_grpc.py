@@ -45,6 +45,11 @@ class SmartCityStub(object):
                 request_serializer=messages__pb2.StateDeviceRequest.SerializeToString,
                 response_deserializer=messages__pb2.Query.FromString,
                 _registered_method=True)
+        self.ChangeTime = channel.unary_unary(
+                '/SmartCity/ChangeTime',
+                request_serializer=messages__pb2.ChangeTimeRequest.SerializeToString,
+                response_deserializer=messages__pb2.Time.FromString,
+                _registered_method=True)
 
 
 class SmartCityServicer(object):
@@ -65,6 +70,13 @@ class SmartCityServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ChangeTime(self, request, context):
+        """RPC para modificar o tempo do dispositivo, usando a nova mensagem de requisição
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SmartCityServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -77,6 +89,11 @@ def add_SmartCityServicer_to_server(servicer, server):
                     servicer.StateDevice,
                     request_deserializer=messages__pb2.StateDeviceRequest.FromString,
                     response_serializer=messages__pb2.Query.SerializeToString,
+            ),
+            'ChangeTime': grpc.unary_unary_rpc_method_handler(
+                    servicer.ChangeTime,
+                    request_deserializer=messages__pb2.ChangeTimeRequest.FromString,
+                    response_serializer=messages__pb2.Time.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -134,6 +151,33 @@ class SmartCity(object):
             '/SmartCity/StateDevice',
             messages__pb2.StateDeviceRequest.SerializeToString,
             messages__pb2.Query.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ChangeTime(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/SmartCity/ChangeTime',
+            messages__pb2.ChangeTimeRequest.SerializeToString,
+            messages__pb2.Time.FromString,
             options,
             channel_credentials,
             insecure,

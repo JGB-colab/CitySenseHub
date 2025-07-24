@@ -14,6 +14,7 @@ class Mulicast:
         device_info_payload.broker_port=self.broker_port
         device_info_payload.topic=self.topic
         self.discovery_request_msg = messages_pb2.SmartCityMessage(devices =device_info_payload)
+        
     def getDevices(self):
         return list(self.discovered_devices.values())
 

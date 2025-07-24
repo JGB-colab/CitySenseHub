@@ -57,7 +57,9 @@ class Gateway:
         self.udpServer = udp.UDP('0.0.0.0', 5008) # Escuta em todas as interfaces.
         self.multicastServer = multicast.Mulicast()
         self.pubsub = pubsub.Broker()
-        self.discovered_devices = {} # Dicionário para armazenar dispositivos online.
+        self.discovered_devices = {}
+        self.devices_lock = threading.Lock() # NOVO: Lock para acesso seguro à lista de dispositivos.
+        self.DEVICE_TIMEOUT = 20
             
     def start(self):
         """Inicia todos os serviços do gateway em threads separadas."""
@@ -67,9 +69,11 @@ class Gateway:
         udp_thread = threading.Thread(target=self.udpServer.Server, args=(self.handle_udp_packet,), daemon=True)
         discovery_thread = threading.Thread(target=self.multicastServer.Server, daemon=True)
         broker_thread = threading.Thread(target=self.pubsub.Sub, daemon=True)
+        pruning_thread = threading.Thread(target=self.prune_inactive_devices, daemon=True)
         udp_thread.start()
         discovery_thread.start()
         broker_thread.start()
+        pruning_thread.start()
         
         print("Gateway está online. Pressione Ctrl+C para sair.")
         try:
@@ -77,6 +81,27 @@ class Gateway:
                 time.sleep(10)
         except KeyboardInterrupt:
             print("\nEncerrando o Gateway...")
+
+    def prune_inactive_devices(self):
+        """Verifica periodicamente e remove dispositivos que não enviam heartbeats."""
+        print("Serviço de limpeza de dispositivos inativos iniciado.")
+        while True:
+            # Espera um pouco antes de fazer a verificação.
+            time.sleep(self.DEVICE_TIMEOUT / 2)
+
+            now = time.time()
+            # Cria uma lista de dispositivos a serem removidos para evitar modificar o dicionário durante a iteração.
+            devices_to_remove = []
+
+            with self.devices_lock: # Bloqueia o acesso para leitura segura
+                for device_id, device_data in self.discovered_devices.items():
+                    if now - device_data['last_seen'] > self.DEVICE_TIMEOUT:
+                        devices_to_remove.append(device_id)
+
+                # Remove os dispositivos inativos fora do loop de iteração
+                for device_id in devices_to_remove:
+                    del self.discovered_devices[device_id]
+                    print(f"[Gateway] Dispositivo '{device_id}' removido por inatividade (timeout).")
 
     def handle_udp_packet(self, data, addr):
         """Processa pacotes UDP recebidos (anúncios ou dados de sensores)."""
@@ -86,9 +111,19 @@ class Gateway:
             
             if message.HasField("devices"):
                 device_info = message.devices
-                self.discovered_devices[device_info.device_id] = (device_info, addr)
-                print(f"[Gateway] Dispositivo '{device_info.device_id}' adicionado/atualizado.")
+                device_id = device_info.device_id
 
+                with self.devices_lock: # Usa o lock para modificar o dicionário
+                    # Se o dispositivo é novo, imprime uma mensagem diferente.
+                    if device_id not in self.discovered_devices:
+                        print(f"[Gateway] Novo dispositivo descoberto: '{device_id}' de {addr}")
+                    
+                    # MODIFICADO: Atualiza ou adiciona o dispositivo com seu timestamp.
+                    self.discovered_devices[device_id] = {
+                        'info': device_info,
+                        'addr': addr,
+                        'last_seen': time.time() # Armazena o tempo do último heartbeat
+                    }
             elif message.HasField("sensor_data"):
                 sensor_data = message.sensor_data
                 print(f"[Gateway UDP] Dados de sensor de {sensor_data.device_id}: {sensor_data.value} {sensor_data.unit}")
@@ -102,7 +137,7 @@ class Gateway:
         device_ip = target_device_info.ip_address
         device_port = target_device_info.port
 
-
+        
         try:
             with grpc.insecure_channel(f'{device_ip}:{device_port}') as channel:
                 stub = messages_pb2_grpc.SmartCityStub(channel)
@@ -111,7 +146,6 @@ class Gateway:
                     ligar = request_data.get('ligar')
                     command_payload = messages_pb2.Command(state=ligar)
                     
-                    # *** MUDANÇA AQUI: Usando ChangeStateRequest ***
                     grpc_request_message = messages_pb2.ChangeStateRequest(
                         device_id=device_id,
                         command=command_payload
@@ -128,6 +162,20 @@ class Gateway:
                     print(f"[Gateway] Enviando StateDevice para {device_id}...")
                     response_from_device = stub.StateDevice(grpc_request_message)
                     return {"message": f"Estado de {device_id}: {'LIGADO' if response_from_device.status else 'DESLIGADO'}"}, 200
+                
+                elif main_command == 'MUDAR_TEMPO':
+                    tempo = request_data.get('tempo')
+                    
+                    command_payload = messages_pb2.Time(value=int(tempo.split(',')[0]))
+                    
+                    grpc_request_message = messages_pb2.ChangeTimeRequest(
+                        device_id=device_id,
+                        time=command_payload
+                    )
+
+                    print(f"[Gateway] Enviando ChangeTime para {device_id} (tempo: {tempo})...")
+                    response_from_device = stub.ChangeTime(grpc_request_message)
+                    return {"message": f"Comando ChangeTime para {device_id} enviado. {response_from_device}"}, 200
 
                 else:
                     return {"message": "Comando gRPC desconhecido."}, 400
@@ -142,28 +190,31 @@ class Gateway:
         
     def listDevices(self):
         """Retorna uma lista de dicionários com IDs e tipos de dispositivos online."""
-        if not self.discovered_devices:
-            return []
-
         device_list = []
-        for device_id, (device_info_obj, _) in self.discovered_devices.items():
-            device_list.append({
-                "id": device_id,
-                "type": messages_pb2.DeviceType.Name(device_info_obj.type),
-                "ip": device_info_obj.ip_address,
-                "port": device_info_obj.port,
-                "is_actuator": device_info_obj.is_actuator
-            })
-        print(device_list)
-        return device_list # Retorna a lista de dicionários Python
+        with self.devices_lock: 
+            if not self.discovered_devices:
+                return []
+            
+            for device_id, device_data in self.discovered_devices.items():
+                device_info_obj = device_data['info']
+                device_list.append({
+                    "id": device_id,
+                    "type": messages_pb2.DeviceType.Name(device_info_obj.type),
+                    "ip": device_info_obj.ip_address,
+                    "port": device_info_obj.port,
+                    "is_actuator": device_info_obj.is_actuator
+                })
+        return device_list 
 
-    
     def findDevice(self, tipo_int):
         """Busca o primeiro dispositivo de um tipo específico na lista de descobertos."""
-        for device_info_obj, addr in self.discovered_devices.values():
-            if device_info_obj.type == tipo_int:
-                print(f"Dispositivo do tipo '{messages_pb2.DeviceType.Name(tipo_int)}' encontrado: {device_info_obj.device_id}")
-                return (device_info_obj, addr)
+        with self.devices_lock:
+            for device_data in self.discovered_devices.values():
+                device_info_obj = device_data['info']
+                if device_info_obj.type == tipo_int:
+                    print(f"Dispositivo do tipo '{messages_pb2.DeviceType.Name(tipo_int)}' encontrado: {device_info_obj.device_id}")
+                    # Retorna o objeto de info e o endereço.
+                    return (device_info_obj, device_data['addr'])
         
         print(f"Nenhum dispositivo do tipo '{messages_pb2.DeviceType.Name(tipo_int)}' foi encontrado.")
         return None
@@ -239,7 +290,7 @@ class ApiGatewayConsultas(Resource):
                 request_data={}
             )
             print(response_data)
-            return response_data, status_code # CORRIGIDO: Retorne a tupla diretamente
+            return response_data, status_code 
         else:
             return {"message": f"Dispositivo do tipo {messages_pb2.DeviceType.Name(id)} não encontrado ou offline."}, 404
 
@@ -269,7 +320,16 @@ class ApiGatewayChanges(Resource):
                     main_command='LIGAR_DISPOSITIVO',
                     request_data=request_data 
                 )
-                return response_data, status_code # CORRIGIDO: Retorne a tupla diretamente
+                return response_data, status_code
+            
+            elif main_command == 'MUDAR_TEMPO':
+                response_data, status_code = self.gateway.handle_grpc_client_command(
+                    target_device_info=device_info_obj,
+                    main_command='MUDAR_TEMPO',
+                    request_data=request_data 
+                )
+                return response_data, status_code
+
             else:
                 change_definition_img = request_data.get('img')
                 if change_definition_img is not None:
@@ -281,7 +341,7 @@ class ApiGatewayChanges(Resource):
             return {"message": f"Dispositivo do tipo {messages_pb2.DeviceType.Name(id)} não encontrado ou offline."}, 404
 
 api.add_resource(AuthResource, '/login') # Rota de login
-api.add_resource(ProtectedResource, '/protected') # Rota protegida de exemplo        
+api.add_resource(ProtectedResource, '/protected') # Rota protegida de exemplo(rota de)        
 api.add_resource(ApiGatewayConsultas , '/consultas', '/consultas/<int:id>')
 api.add_resource(ApiGatewayChanges , '/dispositivos', '/dispositivos/<int:id>')
 

@@ -24,29 +24,33 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0emessages.proto\"\x95\x01\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x19\n\x04type\x18\x02 \x01(\x0e\x32\x0b.DeviceType\x12\x12\n\nip_address\x18\x03 \x01(\t\x12\x0c\n\x04port\x18\x04 \x01(\x05\x12\x13\n\x0bis_actuator\x18\x05 \x01(\x08\x12\x13\n\x0b\x62roker_port\x18\x06 \x01(\x05\x12\r\n\x05topic\x18\x07 \x01(\t\"\x18\n\x07\x43ommand\x12\r\n\x05state\x18\x01 \x01(\x08\"<\n\nSensorData\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x0c\n\x04unit\x18\x03 \x01(\t\"\x17\n\x05Query\x12\x0e\n\x06status\x18\x01 \x01(\x08\"B\n\x12\x43hangeStateRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x19\n\x07\x63ommand\x18\x02 \x01(\x0b\x32\x08.Command\"\'\n\x12StateDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"a\n\x10SmartCityMessage\x12\x1e\n\x07\x64\x65vices\x18\x01 \x01(\x0b\x32\x0b.DeviceInfoH\x00\x12\"\n\x0bsensor_data\x18\x02 \x01(\x0b\x32\x0b.SensorDataH\x00\x42\t\n\x07payload*x\n\nDeviceType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0e\n\nLIGHT_POST\x10\x01\x12\x11\n\rTRAFFIC_LIGHT\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\x12\x16\n\x12TEMPERATURE_SENSOR\x10\x04\x12\x16\n\x12\x41IR_QUALITY_SENSOR\x10\x05\x32\x63\n\tSmartCity\x12*\n\x0b\x43hangeState\x12\x13.ChangeStateRequest\x1a\x06.Query\x12*\n\x0bStateDevice\x12\x13.StateDeviceRequest\x1a\x06.Queryb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0emessages.proto\"\x95\x01\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x19\n\x04type\x18\x02 \x01(\x0e\x32\x0b.DeviceType\x12\x12\n\nip_address\x18\x03 \x01(\t\x12\x0c\n\x04port\x18\x04 \x01(\x05\x12\x13\n\x0bis_actuator\x18\x05 \x01(\x08\x12\x13\n\x0b\x62roker_port\x18\x06 \x01(\x05\x12\r\n\x05topic\x18\x07 \x01(\t\"\x18\n\x07\x43ommand\x12\r\n\x05state\x18\x01 \x01(\x08\"\x17\n\x05Query\x12\x0e\n\x06status\x18\x01 \x01(\x08\"\x15\n\x04Time\x12\r\n\x05value\x18\x01 \x01(\x05\"<\n\nSensorData\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x0c\n\x04unit\x18\x03 \x01(\t\"B\n\x12\x43hangeStateRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x19\n\x07\x63ommand\x18\x02 \x01(\x0b\x32\x08.Command\"\'\n\x12StateDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\";\n\x11\x43hangeTimeRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x04time\x18\x02 \x01(\x0b\x32\x05.Time\"a\n\x10SmartCityMessage\x12\x1e\n\x07\x64\x65vices\x18\x01 \x01(\x0b\x32\x0b.DeviceInfoH\x00\x12\"\n\x0bsensor_data\x18\x02 \x01(\x0b\x32\x0b.SensorDataH\x00\x42\t\n\x07payload*\x81\x01\n\nDeviceType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0e\n\nLIGHT_POST\x10\x01\x12\x11\n\rTRAFFIC_LIGHT\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\x12\x16\n\x12TEMPERATURE_SENSOR\x10\x04\x12\x16\n\x12\x41IR_QUALITY_SENSOR\x10\x05\x12\x07\n\x03GPS\x10\x06\x32\x8c\x01\n\tSmartCity\x12*\n\x0b\x43hangeState\x12\x13.ChangeStateRequest\x1a\x06.Query\x12*\n\x0bStateDevice\x12\x13.StateDeviceRequest\x1a\x06.Query\x12\'\n\nChangeTime\x12\x12.ChangeTimeRequest\x1a\x05.Timeb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'messages_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_DEVICETYPE']._serialized_start=491
-  _globals['_DEVICETYPE']._serialized_end=611
+  _globals['_DEVICETYPE']._serialized_start=576
+  _globals['_DEVICETYPE']._serialized_end=705
   _globals['_DEVICEINFO']._serialized_start=19
   _globals['_DEVICEINFO']._serialized_end=168
   _globals['_COMMAND']._serialized_start=170
   _globals['_COMMAND']._serialized_end=194
-  _globals['_SENSORDATA']._serialized_start=196
-  _globals['_SENSORDATA']._serialized_end=256
-  _globals['_QUERY']._serialized_start=258
-  _globals['_QUERY']._serialized_end=281
-  _globals['_CHANGESTATEREQUEST']._serialized_start=283
-  _globals['_CHANGESTATEREQUEST']._serialized_end=349
-  _globals['_STATEDEVICEREQUEST']._serialized_start=351
-  _globals['_STATEDEVICEREQUEST']._serialized_end=390
-  _globals['_SMARTCITYMESSAGE']._serialized_start=392
-  _globals['_SMARTCITYMESSAGE']._serialized_end=489
-  _globals['_SMARTCITY']._serialized_start=613
-  _globals['_SMARTCITY']._serialized_end=712
+  _globals['_QUERY']._serialized_start=196
+  _globals['_QUERY']._serialized_end=219
+  _globals['_TIME']._serialized_start=221
+  _globals['_TIME']._serialized_end=242
+  _globals['_SENSORDATA']._serialized_start=244
+  _globals['_SENSORDATA']._serialized_end=304
+  _globals['_CHANGESTATEREQUEST']._serialized_start=306
+  _globals['_CHANGESTATEREQUEST']._serialized_end=372
+  _globals['_STATEDEVICEREQUEST']._serialized_start=374
+  _globals['_STATEDEVICEREQUEST']._serialized_end=413
+  _globals['_CHANGETIMEREQUEST']._serialized_start=415
+  _globals['_CHANGETIMEREQUEST']._serialized_end=474
+  _globals['_SMARTCITYMESSAGE']._serialized_start=476
+  _globals['_SMARTCITYMESSAGE']._serialized_end=573
+  _globals['_SMARTCITY']._serialized_start=708
+  _globals['_SMARTCITY']._serialized_end=848
 # @@protoc_insertion_point(module_scope)

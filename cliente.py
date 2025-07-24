@@ -16,6 +16,29 @@ PROTECTED_GENERIC_ENDPOINT = "/protected"
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "123"
 
+def enviar_comando_para_gateway(comando, tipo= None, ligar = None, consultar = None):
+    """
+    Função que abre uma conexão, envia um comando e retorna a resposta.
+    """
+    if tipo is not None and ligar is None and consultar is None:
+        comando = f"{comando};{tipo}"
+    elif ligar is not None:
+        comando = f"{comando};{tipo};{ligar}"
+    elif consultar is not None:
+        comando = f"{comando};{tipo};{consultar}"
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((GATEWAY_IP, GATEWAY_TCP_PORT))
+            
+            s.sendall(comando.encode('utf-8'))
+            
+            resposta = s.recv(4096)
+            return resposta            
+    except ConnectionRefusedError:
+        return "ERRO: Não foi possível conectar ao Gateway. Ele está online?"
+    except Exception as e:
+        return f"ERRO: Ocorreu um erro inesperado: {e}"
 
 
 class Cliente: 
@@ -70,7 +93,7 @@ class Cliente:
             headers = self.get_auth_headers()
             url = f"{self.base_url}{endpoint}"
             response = requests.post(url, headers=headers, json=data)
-            print('Post metodo: ',response  )
+            print('Post metodo: ',response)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -99,12 +122,19 @@ def main():
                     (3) Câmera
             [2] Consultar Estado dos Dispositivos        
             [3] Listar todos os dispositivos online
+            [4] Mudar configuração de envio de tempo
+                   (1) Temperatura
+                   (2) Qualidade do Ar
+                   (3) GPS              
             [x] Sair
             ''')
                 tipo_map = {
                         '1': messages_pb2.DeviceType.LIGHT_POST,
                         '2': messages_pb2.DeviceType.TRAFFIC_LIGHT,
-                        '3': messages_pb2.DeviceType.CAMERA
+                        '3': messages_pb2.DeviceType.CAMERA,
+                        '4': messages_pb2.DeviceType.TEMPERATURE_SENSOR,
+                        '5': messages_pb2.DeviceType.AIR_QUALITY_SENSOR,
+                        '6': messages_pb2.DeviceType.GPS,
                     }
               
                 input_usuario = input('Digite a opção desejada: ').lower().strip()
@@ -153,21 +183,34 @@ def main():
                     print("\nSolicitando lista de dispositivos ao Gateway...")
                     try:
                         resposta_do_servidor = client.get_protected_data((f'/consultas/0'))
+                        dispositivos_existentes = [d['id'] for d in resposta_do_servidor]
                         print("--- Resposta do Gateway ---")
-                        print(resposta_do_servidor)
+                        print('\n'.join(dispositivos_existentes))
                         print("---------------------------\n")
 
-                    except AttributeError:
+                    except AttributeError as e:
+                        print(e)
                         print('[Erro 500]Serviço de gateway não disponível! Por favor, tente mais tarde')    
                 
                 elif input_usuario == '4':
-                    comando = "MODIFICAR" 
                     print("\nSolicitando lista de dispositivos ao Gateway...")
+                    
+                    dispositivo = input('Selecione o tipo de dispositivo a ser ligado (4=Temp, 5=Ar, 6=GPS):').lower().strip()
+                    tempo = input(r'Defina o tempo de envio: ').lower().strip()
+                    
+                    comando = 'MUDAR_TEMPO'
                     try:
-                        #resposta_do_servidor = enviar_comando_para_gateway(comando)
-                        print("--- Resposta do Gateway ---")
-                        #print(resposta_do_servidor.decode('utf-8'))
-                        print("---------------------------\n")
+                        if dispositivo in tipo_map:
+                            tipo = tipo_map[dispositivo]
+                            print(f"Enviando comando para ligar o tipo: {messages_pb2.DeviceType.Name(tipo)}")
+                            data = {
+                                'tempo': tempo,
+                                'type_command': comando,
+                                'device_type': tipo
+                            }
+                            resposta_do_servidor = client.post_protected_data(f'/dispositivos/{tipo}',data)
+
+                            print(f"Resposta do Gateway: {resposta_do_servidor}")
 
                     except AttributeError:
                         print('[Erro 500]Serviço de gateway não disponível! Por favor, tente mais tarde')    

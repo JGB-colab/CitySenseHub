@@ -140,7 +140,7 @@ def main():
                 input_usuario = input('Digite a opção desejada: ').lower().strip()
                         
                 if input_usuario == '1':
-                    dispositivo = input('Selecione o tipo de dispositivo a ser ligado (1=Poste, 2=Camera, 3=Semaforo): ').lower().strip()
+                    dispositivo = input('Selecione o tipo de dispositivo a ser ligado (1=Poste, 2=Semaforo, 3=Camera): ').lower().strip()
                     ligar = input(r'Ligar[1]\Desligar[0]: ').lower().strip()
                     
                     if ligar == '0':
@@ -166,7 +166,7 @@ def main():
                         print("Tipo de dispositivo inválido.")
                         
                 elif input_usuario == '2': 
-                    dispositivo = input('Selecione o dispositivo a ser consultado(1=Poste, 2=Camera, 3=Semaforo) : ').lower().strip()
+                    dispositivo = input('Selecione o dispositivo a ser consultado(1=Poste, 2=Semaforo, 3=Camera) : ').lower().strip()
                     comando = 'CONSULTAR_DISPOSITIVO'
                   
                     if dispositivo in tipo_map:

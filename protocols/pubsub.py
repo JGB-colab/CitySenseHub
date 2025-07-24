@@ -20,38 +20,7 @@ Tem que  criar uma fila e se inscrever (fazer o bind) no smart_city_exchange.
 Use o padrão de inscrição sensores.# para receber mensagens de todos os sensores.
 O arquivo subscriber_exemplo.py vai ser a base para receber as mensagens.
 '''
-# 1. Conecta ao servidor RabbitMQ (que está rodando via Docker)
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
 
-# 2. Garante que o exchange 'smart_city_exchange' do tipo 'topic' exista
-channel.exchange_declare(exchange='smart_city_exchange', exchange_type='topic')
-
-# 3. Tópico que será usado para publicar a mensagem. Formato: sensores.<tipo>.<id>
-routing_key = 'sensores.temperatura.sala01'
-
-# 4. Mensagem de exemplo em formato de dicionário Python
-message = {
-  "deviceId": "temp-sensor-sala-01",
-  "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-  "value": round(random.uniform(20.0, 30.0), 2), # Gera um valor aleatório
-  "unit": "Celsius"
-}
-
-# 5. Converte o dicionário para uma string JSON
-message_body = json.dumps(message)
-
-# 6. Publica a mensagem no exchange com o tópico especificado
-channel.basic_publish(
-    exchange='smart_city_exchange',
-    routing_key=routing_key,
-    body=message_body
-)
-
-print(f" [x] Enviado '{routing_key}': '{message_body}'")
-
-# 7. Fecha a conexão
-connection.close()
 
 class Broker():
 

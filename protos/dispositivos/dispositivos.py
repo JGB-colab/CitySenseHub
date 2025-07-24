@@ -3,8 +3,8 @@ import sys
 from concurrent import futures
 
 c = os.path.abspath(os.curdir) + r'\protos'
-sys.path.insert(0, c)
 c_pubsub = os.path.abspath(os.curdir) + r'\protocols'
+sys.path.insert(0, c)
 sys.path.insert(0, c_pubsub)
 import socket
 import struct

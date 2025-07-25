@@ -3,7 +3,7 @@ import threading
 import time 
 if __name__ == "__main__":
     print("Iniciando dispositivo GPS autônomo...")
-    gps = Continuos(tipo="GPS", data_unit="") 
+    gps = Continuos(tipo="TEMPERATURE_SENSOR", data_unit="") 
     
     gps_thread = threading.Thread(target=gps.iniciar, daemon=True)
     gps_thread.start()
